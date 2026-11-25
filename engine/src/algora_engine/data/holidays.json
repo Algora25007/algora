@@ -1,0 +1,31 @@
+{
+  "_comment": "Exchange trading holidays, ported from algora-dash.js. Add a year only from the exchange's published circular; years not listed are treated as 'unknown' (weekdays open, flagged).",
+  "years": {
+    "2026": {
+      "sources": [
+        "NSE/CMTR/71775 (12 Dec 2025) - equity holidays 2026",
+        "NSE/FAOP/71777 (12 Dec 2025) - F&O holidays 2026",
+        "NSE/CMTR/72260 (15 Jan 2026 municipal elections holiday added)"
+      ],
+      "nse": {
+        "2026-01-15": "Municipal elections",
+        "2026-01-26": "Republic Day",
+        "2026-03-03": "Holi",
+        "2026-03-26": "Ram Navami",
+        "2026-03-31": "Mahavir Jayanti",
+        "2026-04-03": "Good Friday",
+        "2026-04-14": "Ambedkar Jayanti",
+        "2026-05-01": "Maharashtra Day",
+        "2026-05-28": "Bakri Id",
+        "2026-06-26": "Muharram",
+        "2026-09-14": "Ganesh Chaturthi",
+        "2026-10-02": "Gandhi Jayanti",
+        "2026-10-20": "Dussehra",
+        "2026-11-10": "Diwali Balipratipada",
+        "2026-11-24": "Guru Nanak Jayanti",
+        "2026-12-25": "Christmas"
+      },
+      "mcx_closed_full_day": ["2026-01-26", "2026-04-03", "2026-10-02", "2026-12-25"]
+    }
+  }
+}

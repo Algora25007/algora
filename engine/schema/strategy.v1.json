@@ -1,0 +1,414 @@
+{
+  "$defs": {
+    "Condition": {
+      "additionalProperties": false,
+      "properties": {
+        "left": {
+          "discriminator": {
+            "mapping": {
+              "const": "#/$defs/ConstOperand",
+              "price": "#/$defs/PriceOperand",
+              "session": "#/$defs/SessionOperand"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PriceOperand"
+            },
+            {
+              "$ref": "#/$defs/ConstOperand"
+            },
+            {
+              "$ref": "#/$defs/SessionOperand"
+            }
+          ],
+          "title": "Left"
+        },
+        "op": {
+          "enum": [
+            "crosses_above",
+            "crosses_below",
+            "gt",
+            "gte",
+            "lt",
+            "lte"
+          ],
+          "title": "Op",
+          "type": "string"
+        },
+        "right": {
+          "discriminator": {
+            "mapping": {
+              "const": "#/$defs/ConstOperand",
+              "price": "#/$defs/PriceOperand",
+              "session": "#/$defs/SessionOperand"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PriceOperand"
+            },
+            {
+              "$ref": "#/$defs/ConstOperand"
+            },
+            {
+              "$ref": "#/$defs/SessionOperand"
+            }
+          ],
+          "title": "Right"
+        }
+      },
+      "required": [
+        "op",
+        "left",
+        "right"
+      ],
+      "title": "Condition",
+      "type": "object"
+    },
+    "ConstOperand": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "const",
+          "default": "const",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "ConstOperand",
+      "type": "object"
+    },
+    "EntryRules": {
+      "additionalProperties": false,
+      "description": "Conditions are AND-ed. An empty list disables that side.",
+      "properties": {
+        "long": {
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "maxItems": 10,
+          "title": "Long",
+          "type": "array"
+        },
+        "short": {
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "maxItems": 10,
+          "title": "Short",
+          "type": "array"
+        }
+      },
+      "title": "EntryRules",
+      "type": "object"
+    },
+    "Exchange": {
+      "enum": [
+        "NSE",
+        "BSE",
+        "NFO",
+        "BFO",
+        "MCX"
+      ],
+      "title": "Exchange",
+      "type": "string"
+    },
+    "Exits": {
+      "additionalProperties": false,
+      "description": "Exit rules. Any combination is allowed; an open position is always squared off at session.square_off.",
+      "properties": {
+        "flip": {
+          "default": true,
+          "description": "Reverse on an opposite entry signal",
+          "title": "Flip",
+          "type": "boolean"
+        },
+        "stop_pct": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0.05,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop Pct"
+        },
+        "target_pct": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0.05,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Target Pct"
+        },
+        "trailing_stop_pct": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 0.05,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Trailing Stop Pct"
+        }
+      },
+      "title": "Exits",
+      "type": "object"
+    },
+    "Instrument": {
+      "additionalProperties": false,
+      "properties": {
+        "agri": {
+          "default": false,
+          "description": "Agricultural commodity (CTT exempt, lower SEBI fee)",
+          "title": "Agri",
+          "type": "boolean"
+        },
+        "exchange": {
+          "$ref": "#/$defs/Exchange"
+        },
+        "lot_size": {
+          "anyOf": [
+            {
+              "maximum": 1000000,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Override the lot-size table (units per lot). Required for stock F&O.",
+          "title": "Lot Size"
+        },
+        "segment": {
+          "$ref": "#/$defs/Segment"
+        },
+        "symbol": {
+          "description": "Exchange trading symbol, e.g. NIFTY",
+          "pattern": "^[A-Z0-9&-]{1,20}$",
+          "title": "Symbol",
+          "type": "string"
+        },
+        "tick_size": {
+          "default": 0.05,
+          "exclusiveMinimum": 0,
+          "maximum": 100,
+          "title": "Tick Size",
+          "type": "number"
+        }
+      },
+      "required": [
+        "symbol",
+        "exchange",
+        "segment"
+      ],
+      "title": "Instrument",
+      "type": "object"
+    },
+    "PriceOperand": {
+      "additionalProperties": false,
+      "description": "A price of the candle being evaluated.",
+      "properties": {
+        "field": {
+          "default": "close",
+          "enum": [
+            "open",
+            "high",
+            "low",
+            "close"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "kind": {
+          "const": "price",
+          "default": "price",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "title": "PriceOperand",
+      "type": "object"
+    },
+    "Risk": {
+      "additionalProperties": false,
+      "properties": {
+        "max_entries_per_day": {
+          "default": 1,
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Max Entries Per Day",
+          "type": "integer"
+        },
+        "quantity_lots": {
+          "default": 1,
+          "maximum": 500,
+          "minimum": 1,
+          "title": "Quantity Lots",
+          "type": "integer"
+        }
+      },
+      "title": "Risk",
+      "type": "object"
+    },
+    "Segment": {
+      "enum": [
+        "equity_intraday",
+        "equity_delivery",
+        "futures",
+        "options",
+        "commodity_futures",
+        "commodity_options"
+      ],
+      "title": "Segment",
+      "type": "string"
+    },
+    "Session": {
+      "additionalProperties": false,
+      "properties": {
+        "square_off": {
+          "default": "15:15",
+          "description": "Time every open position is closed (IST)",
+          "title": "Square Off",
+          "type": "string"
+        },
+        "start": {
+          "default": "09:15",
+          "description": "Start of the first candle of the day (IST)",
+          "title": "Start",
+          "type": "string"
+        }
+      },
+      "title": "Session",
+      "type": "object"
+    },
+    "SessionOperand": {
+      "additionalProperties": false,
+      "description": "A level fixed for the day once the first candle (the one starting at ``session.start``) has closed.\n\n``offset_pct`` moves the level by a percentage, e.g. +0.1 for 0.1% above the first candle high.",
+      "properties": {
+        "kind": {
+          "const": "session",
+          "default": "session",
+          "title": "Kind",
+          "type": "string"
+        },
+        "offset_pct": {
+          "default": 0.0,
+          "maximum": 20,
+          "minimum": -20,
+          "title": "Offset Pct",
+          "type": "number"
+        },
+        "ref": {
+          "enum": [
+            "first_candle_open",
+            "first_candle_high",
+            "first_candle_low",
+            "first_candle_close",
+            "day_open"
+          ],
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "title": "SessionOperand",
+      "type": "object"
+    }
+  },
+  "$id": "https://algora25007.github.io/algora/schema/strategy.v1.json",
+  "additionalProperties": false,
+  "properties": {
+    "entry": {
+      "$ref": "#/$defs/EntryRules"
+    },
+    "exits": {
+      "$ref": "#/$defs/Exits"
+    },
+    "instrument": {
+      "$ref": "#/$defs/Instrument"
+    },
+    "name": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "risk": {
+      "$ref": "#/$defs/Risk"
+    },
+    "schema_version": {
+      "const": 1,
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "session": {
+      "$ref": "#/$defs/Session"
+    },
+    "template": {
+      "default": "custom",
+      "enum": [
+        "first_candle_cross",
+        "custom"
+      ],
+      "title": "Template",
+      "type": "string"
+    },
+    "template_params": {
+      "additionalProperties": true,
+      "description": "UI round-trip only; not executed",
+      "title": "Template Params",
+      "type": "object"
+    },
+    "timeframe": {
+      "enum": [
+        "1m",
+        "3m",
+        "5m",
+        "10m",
+        "15m",
+        "30m",
+        "60m"
+      ],
+      "title": "Timeframe",
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "instrument",
+    "timeframe",
+    "entry"
+  ],
+  "title": "Algora strategy (schema v1)",
+  "type": "object"
+}

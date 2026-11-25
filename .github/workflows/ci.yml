@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, "phase-*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "ruff>=0.5"
+      - name: Ruff (engine)
+        working-directory: engine
+        run: ruff check src tests && ruff format --check src tests
+      - name: Ruff (api)
+        working-directory: api
+        run: ruff check app tests migrations && ruff format --check app tests migrations
+
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: engine/pyproject.toml
+      - run: pip install -e "engine[dev]"
+      - name: Tests
+        working-directory: engine
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=90
+
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: algora
+          POSTGRES_PASSWORD: algora
+          POSTGRES_DB: algora_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U algora -d algora_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://algora:algora@localhost:5432/algora_test
+      TEST_REDIS_URL: redis://localhost:6379/15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            engine/pyproject.toml
+            api/pyproject.toml
+      - run: pip install -e engine -e "api[dev]"
+      - name: Tests (runs the Alembic migrations against Postgres first)
+        working-directory: api
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=90

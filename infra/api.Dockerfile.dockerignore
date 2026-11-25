@@ -1,0 +1,10 @@
+# Only the engine and API go into the image; never the static site, local env files or caches.
+*
+!engine/
+!api/
+**/__pycache__
+**/*.egg-info
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage
+**/.env

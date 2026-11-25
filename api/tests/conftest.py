@@ -12,7 +12,10 @@ import pyotp
 import pytest
 from cryptography.fernet import Fernet
 
-TEST_DB = os.environ.get("TEST_DATABASE_URL", "postgresql+psycopg://algora@localhost:54329/algora_test")
+TEST_DB = os.environ.get("TEST_DATABASE_URL", "postgresql+psycopg://algora:algora@localhost:5432/algora_test")
+# The suite drops and recreates the schema: refuse anything that is not clearly a test database.
+if not TEST_DB.rsplit("/", 1)[-1].split("?")[0].endswith("_test"):
+    raise RuntimeError(f"TEST_DATABASE_URL must point at a database whose name ends in _test, got {TEST_DB}")
 os.environ.update(
     {
         "ALGORA_ENV": "test",

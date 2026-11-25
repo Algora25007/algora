@@ -3,19 +3,19 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Algora: build, backtest, paper trade and deploy no-code trading bots for NSE, NFO and MCX, connected to your own broker." />
+    <meta name="description" content="Algora: build your own trading strategies for NSE, NFO and MCX without code, and backtest them on your own candles. Paper and live trading are in development." />
     <meta name="theme-color" content="#07090e" />
-    <title>Algora · Trading bots for Indian markets</title>
+    <title>Algora · Build your own trading strategies for Indian markets</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f6feb'/%3E%3Cpath d='M7 25 L16 6 L25 25' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Algora" />
-    <meta property="og:title" content="Algora · No-code trading bots for Indian markets" />
+    <meta property="og:title" content="Algora · Build your own trading strategies for Indian markets" />
     <meta property="og:description" content="Write trading rules for Nifty, BankNifty, stocks and MCX without code. Backtest them on your own candles, free, in your browser." />
     <meta name="twitter:card" content="summary" />
-    <link rel="stylesheet" href="hark.css?v=20261126b" />
+    <link rel="stylesheet" href="hark.css?v=20261126e" />
     <style>
       /* ===== Theme tokens ===== */
       [data-theme="light"] {
@@ -340,8 +340,8 @@
     <script>/* Motion gate: hidden starting states only exist under html.fx; removed if algora-fx.js does not start */
       (function () { try { var d = document.documentElement; if (window.matchMedia && !matchMedia("(prefers-reduced-motion: reduce)").matches && "IntersectionObserver" in window) { d.classList.add("fx"); setTimeout(function () { if (!window.__algoraFx) d.classList.remove("fx"); }, 4000); } } catch (e) {} })();
     </script>
-    <link rel="stylesheet" href="algora-home.css?v=20261126b" />
-    <link rel="stylesheet" href="algora-dash.css?v=20261126d" />
+    <link rel="stylesheet" href="algora-home.css?v=20261126e" />
+    <link rel="stylesheet" href="algora-dash.css?v=20261126e" />
   </head>
   <body>
     <div class="page" id="top">
@@ -358,7 +358,7 @@
         <nav class="x-tabs" role="tablist" aria-label="Sections">
           <button role="tab" data-tab="home" aria-selected="true">Home</button>
           <button role="tab" data-tab="dashboard" aria-selected="false">Dashboard</button>
-          <button role="tab" data-tab="bots" aria-selected="false">Bots</button>
+          <button role="tab" data-tab="bots" aria-selected="false">Strategies</button>
           <button role="tab" data-tab="backtest" aria-selected="false">Backtest &amp; Paper Trade</button>
           <span class="x-tabs__bar" aria-hidden="true"></span>
         </nav>
@@ -368,7 +368,7 @@
             <svg class="x-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
           </button>
           <button class="x-btn" type="button" data-open="signin">Sign in</button>
-          <button class="x-btn x-btn--primary x-getstarted" type="button" data-goto="bots">Build a bot</button>
+          <button class="x-btn x-btn--primary x-getstarted" type="button" data-goto="bots">Build a strategy</button>
         </div>
       </header>
 
@@ -384,7 +384,7 @@
             <div class="ed-hero__in">
               <div class="ed-hero__meta">
                 <span>Algora</span>
-                <span>No-code trading bots for NSE, NFO and MCX</span>
+                <span>Build your own trading strategies for NSE, NFO and MCX</span>
                 <span class="ed-hero__clock">IST <b id="ed-ist">--:--:--</b></span>
               </div>
               <div class="ed-hero__grid">
@@ -392,7 +392,7 @@
                   <h1 class="ed-h1">Your trading rules, running on your broker. <span class="ed-h1__em">No code.</span></h1>
                   <p class="ed-hero__sub">Write entries, exits and square-off times for Nifty, BankNifty, stocks and MCX. Backtest them on your own candles, free and in your browser. Paper trading and live routing through Zerodha, Upstox, Angel One, Dhan and Fyers come next.</p>
                   <div class="ed-ctas">
-                    <button class="ed-btn ed-btn--solid" type="button" data-goto="bots">Build a bot<span class="ed-btn__arr" aria-hidden="true">→</span></button>
+                    <button class="ed-btn ed-btn--solid" type="button" data-goto="bots">Build a strategy<span class="ed-btn__arr" aria-hidden="true">→</span></button>
                     <button class="ed-btn ed-btn--line" type="button" data-goto="backtest">Run a backtest</button>
                   </div>
                   <dl class="ed-facts">
@@ -403,9 +403,9 @@
                   </dl>
                 </div>
 
-                <figure class="ed-app" aria-label="An example bot: First Candle Cross on NIFTY futures, written as rules.">
+                <figure class="ed-app" aria-label="An example strategy: First Candle Cross on NIFTY futures, written as rules.">
                   <div class="ed-app__bar">
-                    <span class="ed-app__crumb">Bots <i>/</i> <b>fcc-nifty-15m</b> <i>/</i> Rules</span>
+                    <span class="ed-app__crumb">Strategies <i>/</i> <b>fcc-nifty-15m</b> <i>/</i> Rules</span>
                     <span class="ed-app__tabs" aria-hidden="true"><span class="is-on">Rules</span><span>Backtest</span><span>Paper</span><span>Live</span></span>
                   </div>
                   <div class="ed-app__body">
@@ -452,11 +452,11 @@
           <!-- Returning users: their bots, first. Hidden until a bot exists. -->
           <section class="ed-sec" id="glance" aria-labelledby="glance-h" hidden>
             <header class="ed-head ed-head--top">
-              <div><p class="ed-num">Your bots</p><h2 class="ed-h2" id="glance-h">Your bots at a glance.</h2></div>
-              <div class="ed-head__end"><button class="ed-btn ed-btn--line" type="button" data-goto="bots">Open Bots</button></div>
+              <div><p class="ed-num">Your strategies</p><h2 class="ed-h2" id="glance-h">Your strategies at a glance.</h2></div>
+              <div class="ed-head__end"><button class="ed-btn ed-btn--line" type="button" data-goto="bots">Open Strategies</button></div>
             </header>
             <div id="home-bots">
-              <div class="x-panel x-empty"><p>No bots yet. Pick a template and save it as a paper bot.</p><button class="ed-btn ed-btn--solid ed-btn--sm" type="button" data-goto="bots">Build a bot<span class="ed-btn__arr" aria-hidden="true">→</span></button></div>
+              <div class="x-panel x-empty"><p>No strategies yet. Pick a template and save it as a paper strategy.</p><button class="ed-btn ed-btn--solid ed-btn--sm" type="button" data-goto="bots">Build a strategy<span class="ed-btn__arr" aria-hidden="true">→</span></button></div>
             </div>
           </section>
 
@@ -471,7 +471,7 @@
             <header class="ed-head">
               <p class="ed-num"><b>01</b> / Pipeline</p>
               <h2 class="ed-h2" id="how-h">Four stages, always in this order.</h2>
-              <p class="ed-lead">A bot is backtested and paper traded before it can place a real order. Build and Backtest work today.</p>
+              <p class="ed-lead">A strategy is backtested and paper traded before it can place a real order. Build and Backtest work today.</p>
             </header>
             <ol class="ed-pipe" id="a-steps">
               <li>
@@ -488,7 +488,7 @@
               </li>
               <li>
                 <span class="ed-pipe__n">03</span>
-                <div><h3>Paper trade</h3><p>The bot runs on live prices without sending orders. Its P&amp;L shows on your dashboard. Save paper bots today; the live-price engine is being built.</p></div>
+                <div><h3>Paper trade</h3><p>The strategy runs on live prices without sending orders. Its P&amp;L shows on your dashboard. Save paper strategies today; the live-price engine is being built.</p></div>
                 <span class="ed-pipe__st ed-pipe__st--soon">Next</span>
                 <button class="x-link" type="button" data-goto="dashboard">See dashboard</button>
               </li>
@@ -530,23 +530,23 @@
                   <div><em>THEN</em><span>buy 1 lot · max 4 / day</span></div>
                   <div><em>EXIT</em><span>flip, target or stop</span></div>
                 </div>
-                <button class="x-link" type="button" data-goto="bots">Build a bot</button>
+                <button class="x-link" type="button" data-goto="bots">Build a strategy</button>
               </article>
               <article class="ed-feat__sq">
                 <p class="ed-feat__k">Auto square-off</p>
                 <div class="ed-clock"><div><b id="a-clock">15:15</b><small>NSE intraday</small></div><div><b>23:15</b><small>MCX</small></div></div>
-                <p>Intraday bots close out before the bell. MCX bots switch to the evening cut-off on their own.</p>
+                <p>Intraday strategies close out before the bell. MCX strategies switch to the evening cut-off on their own.</p>
               </article>
               <article class="ed-feat__acct">
                 <p class="ed-feat__k">Accounts</p>
                 <h3>Personal, HUF, family.</h3>
-                <p>Label each account per broker and send every bot to the one it belongs to.</p>
+                <p>Label each account per broker and send every strategy to the one it belongs to.</p>
                 <div class="a-chips" id="a-chips"></div>
               </article>
               <article class="ed-feat__priv">
                 <p class="ed-feat__k">Privacy</p>
                 <h3>Your setup stays on your machine.</h3>
-                <p>Bots, labels and settings live in your browser, with export and import. API keys stay on your bot's own server, never on this page.</p>
+                <p>Strategies, labels and settings live in your browser, with export and import. API keys stay on your own server, never on this page.</p>
               </article>
             </div>
           </section>
@@ -555,7 +555,7 @@
           <section class="ed-sec" aria-labelledby="strat-h">
             <header class="ed-head ed-head--top">
               <div><p class="ed-num"><b>03</b> / Templates</p><h2 class="ed-h2" id="strat-h">Five templates to start from.</h2></div>
-              <div class="ed-head__end"><p class="ed-lead">Each one opens in the builder as a paper bot. First Candle Cross also runs in the backtester today; the others are next.</p></div>
+              <div class="ed-head__end"><p class="ed-lead">Each one opens in the builder as a paper strategy. First Candle Cross also runs in the backtester today; the others are next.</p></div>
             </header>
             <div class="ed-tablewrap">
               <table class="ed-tbl">
@@ -656,8 +656,8 @@
             </header>
             <ol class="ed-clauses">
               <li><span>05.1</span><div><h3>Funds stay with your broker</h3><p>Orders go to your own SEBI-registered broker through its official API. There is no Algora wallet and no pooled account.</p></div></li>
-              <li><span>05.2</span><div><h3>Paper before live</h3><p>Every bot starts in paper mode. You decide if and when it goes live.</p></div></li>
-              <li><span>05.3</span><div><h3>One switch to stop</h3><p>Pause or delete a bot instantly. Intraday positions square off before the close.</p></div></li>
+              <li><span>05.2</span><div><h3>Paper before live</h3><p>Every strategy starts in paper mode. You decide if and when it goes live.</p></div></li>
+              <li><span>05.3</span><div><h3>One switch to stop</h3><p>Pause or delete a strategy instantly. Intraday positions square off before the close.</p></div></li>
             </ol>
           </section>
 
@@ -679,11 +679,11 @@
             </header>
             <div class="a-faq">
               <details><summary>Is algo trading legal for retail traders in India?</summary><p>Yes. Under SEBI's retail algo framework (circular of 4 February 2025, applicable to all brokers from 1 April 2026), retail traders can automate through their SEBI-registered broker's API. Orders carry an exchange-issued algo tag and API access runs from a whitelisted static IP.</p></details>
-              <details><summary>Does Algora hold my money or place real orders today?</summary><p>No. Algora never holds funds and sends no orders today. You can build bots, save them as paper bots and backtest First Candle Cross on your own data. The live-price paper engine comes next, then live trading through your own broker account.</p></details>
-              <details><summary>Where are my API keys stored?</summary><p>Never on this page. Real API keys belong in your bot's own server environment. The web app only keeps account labels, bots and settings in your browser.</p></details>
-              <details><summary>Is it free?</summary><p>Building bots, backtesting and paper trading are free. Live trading will be a paid plan, priced before it launches.</p></details>
+              <details><summary>Does Algora hold my money or place real orders today?</summary><p>No. Algora never holds funds and sends no orders today. You can build strategies, save them as paper strategies and backtest First Candle Cross on your own data. The live-price paper engine comes next, then live trading through your own broker account.</p></details>
+              <details><summary>Where are my API keys stored?</summary><p>Never on this page. Real API keys belong in your own server environment. The web app only keeps account labels, strategies and settings in your browser.</p></details>
+              <details><summary>Is it free?</summary><p>Building strategies, backtesting and paper trading are free. Live trading will be a paid plan, priced before it launches.</p></details>
               <details><summary>What data does the backtester use?</summary><p>Your own candle CSV (datetime, open, high, low, close). It runs entirely in your browser and nothing is uploaded.</p></details>
-              <details><summary>Which brokers will Algora support?</summary><p>Zerodha first, then Upstox, Angel One, Dhan and Fyers, followed by Groww, Kotak Securities, 5paisa, Alice Blue, Shoonya, Motilal Oswal and ICICI Direct. Today you can label your accounts for each so bots are ready to assign.</p></details>
+              <details><summary>Which brokers will Algora support?</summary><p>Zerodha first, then Upstox, Angel One, Dhan and Fyers, followed by Groww, Kotak Securities, 5paisa, Alice Blue, Shoonya, Motilal Oswal and ICICI Direct. Today you can label your accounts for each so strategies are ready to assign.</p></details>
             </div>
           </section>
 
@@ -696,7 +696,7 @@
             <div class="ed-final__side">
               <p>Building and backtesting cost nothing and run in your browser. Paper trading is next; live routing through your broker's API is in development.</p>
               <div class="ed-ctas">
-                <button class="ed-btn ed-btn--solid" type="button" data-goto="bots">Build a bot<span class="ed-btn__arr" aria-hidden="true">→</span></button>
+                <button class="ed-btn ed-btn--solid" type="button" data-goto="bots">Build a strategy<span class="ed-btn__arr" aria-hidden="true">→</span></button>
                 <button class="ed-btn ed-btn--line" type="button" data-goto="backtest">Run a backtest</button>
               </div>
             </div>
@@ -711,11 +711,11 @@
               <div class="dk-head__main">
                 <p class="dk-k"><span class="dk-dot" id="dk-mkt-dot"></span><span id="dk-mkt-k">Market</span></p>
                 <h1 class="dk-h1" id="dk-h1">Your desk.</h1>
-                <p class="dk-sub" id="dk-sub">Bots, accounts and backtests saved in this browser.</p>
+                <p class="dk-sub" id="dk-sub">Strategies, accounts and backtests saved in this browser.</p>
               </div>
               <div class="dk-head__side">
                 <div class="dk-clock" aria-label="India Standard Time"><b id="dk-clock">--:--:--</b><span id="dk-date">IST</span></div>
-                <button class="dk-kill" type="button" id="dk-kill" aria-pressed="false"><span class="dk-kill__ic" aria-hidden="true"></span><span id="dk-kill-t">Pause all bots</span></button>
+                <button class="dk-kill" type="button" id="dk-kill" aria-pressed="false"><span class="dk-kill__ic" aria-hidden="true"></span><span id="dk-kill-t">Pause all strategies</span></button>
               </div>
             </header>
 
@@ -744,8 +744,8 @@
               <div class="dk-main">
               <section class="dk-card" aria-labelledby="dk-bots-h">
                 <div class="dk-card__head">
-                  <h2 class="dk-h2" id="dk-bots-h">Bots</h2>
-                  <button class="dk-btn" type="button" data-goto="bots">New bot</button>
+                  <h2 class="dk-h2" id="dk-bots-h">Strategies</h2>
+                  <button class="dk-btn" type="button" data-goto="bots">New strategy</button>
                 </div>
                 <div id="dk-bots"></div>
               </section>
@@ -786,7 +786,7 @@
                     <label><span>Daily loss limit</span><span class="dk-field"><i>₹</i><input type="number" inputmode="numeric" min="0" step="500" id="dk-risk-loss" placeholder="Off" /></span></label>
                     <label><span>Max trades a day</span><span class="dk-field"><input type="number" inputmode="numeric" min="1" max="500" step="1" id="dk-risk-trades" placeholder="Off" /></span></label>
                     <label><span>Stop new entries after</span><span class="dk-field"><input type="time" id="dk-risk-cut" /></span></label>
-                    <p class="dk-note" id="dk-risk-msg">Saved in this browser. The paper engine will enforce these across every bot.</p>
+                    <p class="dk-note" id="dk-risk-msg">Saved in this browser. The paper engine will enforce these across every strategy.</p>
                   </form>
                 </section>
               
@@ -806,21 +806,21 @@
         </section>
 
         <!-- ================= TAB: BOTS (phase 3) ================= -->
-        <section class="x-tab" id="tab-bots" role="tabpanel" aria-label="Bots" hidden>
+        <section class="x-tab" id="tab-bots" role="tabpanel" aria-label="Strategies" hidden>
           <div class="x-dash__top">
             <span class="x-badge x-badge--paper">Paper mode · no real orders</span>
-            <div><p class="x-eyebrow">Bots</p><h1 class="x-h2">Build and manage bots</h1></div>
+            <div><p class="x-eyebrow">Strategies</p><h1 class="x-h2">Build and manage strategies</h1></div>
           </div>
 
           <!-- 1. Builder -->
           <section class="x-sec" aria-labelledby="bot-new-h">
             <div class="x-sec__head">
-              <div><p class="x-eyebrow">Builder</p><h2 class="x-h2" id="bot-new-h">Create bot</h2></div>
+              <div><p class="x-eyebrow">Builder</p><h2 class="x-h2" id="bot-new-h">Create strategy</h2></div>
             </div>
             <form class="x-panel x-bf" id="bot-form" novalidate>
               <div class="x-bf__grid">
-                <label class="x-field">Bot name <span class="x-hint">Optional</span><input id="bf-name" type="text" maxlength="40" placeholder="Auto from strategy and instrument" autocomplete="off" /></label>
-                <label class="x-field">Strategy
+                <label class="x-field">Strategy name <span class="x-hint">Optional</span><input id="bf-name" type="text" maxlength="40" placeholder="Auto from strategy and instrument" autocomplete="off" /></label>
+                <label class="x-field">Template
                   <select id="bf-strategy">
                     <option>First Candle Cross</option><option>Opening Range Breakout</option><option>Gap fade</option><option>Monthly option spread</option><option>Momentum</option>
                   </select>
@@ -858,12 +858,12 @@
                     <button class="x-segbtn" type="button" aria-pressed="true">Paper</button>
                     <button class="x-segbtn" type="button" aria-pressed="false" disabled>Live</button>
                   </div>
-                  <span class="x-hint">Live trading runs only from your bot on your own server.</span>
+                  <span class="x-hint">Live trading runs only from your own server.</span>
                 </div>
               </div>
               <div class="x-bf__foot">
                 <p class="x-cap" id="bf-msg" role="status"></p>
-                <button class="x-btn x-btn--primary" type="submit" id="bf-save">Save bot</button>
+                <button class="x-btn x-btn--primary" type="submit" id="bf-save">Save strategy</button>
               </div>
             </form>
           </section>
@@ -871,14 +871,14 @@
           <!-- 2. List -->
           <section class="x-sec" aria-labelledby="bot-list-h">
             <div class="x-sec__head">
-              <div><p class="x-eyebrow">Your bots</p><h2 class="x-h2" id="bot-list-h">Saved bots</h2></div>
+              <div><p class="x-eyebrow">Your strategies</p><h2 class="x-h2" id="bot-list-h">Saved strategies</h2></div>
               <p class="x-cap" id="bot-count" hidden></p>
             </div>
             <div id="bot-list">
-              <div class="x-panel x-empty"><p>No bots yet. Create your first one.</p></div>
+              <div class="x-panel x-empty"><p>No strategies yet. Create your first one.</p></div>
             </div>
             <div class="x-data">
-              <p class="x-cap" id="bot-store-note">Bots stay in this session only.</p>
+              <p class="x-cap" id="bot-store-note">Strategies stay in this session only.</p>
               <div class="x-data__acts">
                 <button class="x-btn x-btn--sm" type="button" data-export>Export data</button>
                 <button class="x-btn x-btn--sm" type="button" data-import>Import data</button>
@@ -924,7 +924,7 @@
             </div>
             <form class="x-panel x-bf" id="bt-form" novalidate>
               <div class="x-bf__grid">
-                <label class="x-field">Strategy <span class="x-hint">Only strategy available for now</span>
+                <label class="x-field">Template <span class="x-hint">Only template backtestable for now</span>
                   <select id="bt-strategy"><option>First Candle Cross</option></select>
                 </label>
                 <label class="x-field">Session start <span class="x-hint">First candle sets high and low</span><input id="bt-start" type="time" value="09:15" /></label>
@@ -995,7 +995,7 @@
           <ul>
             <li><a href="#" data-goto="home">Home</a></li>
             <li><a href="#" data-goto="dashboard">Dashboard</a></li>
-            <li><a href="#" data-goto="bots">Bots</a></li>
+            <li><a href="#" data-goto="bots">Strategies</a></li>
             <li><a href="#" data-goto="backtest">Backtest</a></li>
           </ul>
         </div>
@@ -1025,7 +1025,7 @@
       <nav class="x-bottom" role="tablist" aria-label="Sections">
         <button role="tab" data-tab="home" aria-selected="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5V20h-5v-6h-6v6H4z" /></svg>Home</button>
         <button role="tab" data-tab="dashboard" aria-selected="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="4" rx="1.5" /><rect x="13" y="10" width="7" height="10" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /></svg>Dashboard</button>
-        <button role="tab" data-tab="bots" aria-selected="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2" /><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5" /></svg>Bots</button>
+        <button role="tab" data-tab="bots" aria-selected="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="2" /><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16h5" /></svg>Strategies</button>
         <button role="tab" data-tab="backtest" aria-selected="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16M5 16l4-5 4 3 6-8" /></svg>Backtest</button>
       </nav>
     </div>
@@ -1040,7 +1040,7 @@
         <div class="x-modal__body">
           <label class="x-field">Account label<input id="acct-label" type="text" maxlength="40" placeholder="e.g. Personal, HUF, Client 1" required autocomplete="off" /></label>
           <div class="x-saved" id="acct-saved" hidden><span class="x-cap">Already added</span><ul></ul></div>
-          <p class="x-cap">Real API keys go in the bot's <span class="x-mono">.env</span> file, never on this page. <span id="acct-store-note">Labels stay in this session only.</span></p>
+          <p class="x-cap">Real API keys go in your server's <span class="x-mono">.env</span> file, never on this page. <span id="acct-store-note">Labels stay in this session only.</span></p>
           <div class="x-hero__ctas"><button class="x-btn x-btn--primary" type="submit">Add account</button><button class="x-btn" type="button" data-close>Done</button></div>
           <div class="x-data__acts">
             <button class="x-btn x-btn--sm" type="button" data-export>Export data</button>
@@ -1052,7 +1052,7 @@
     </dialog>
     <dialog class="x-modal" id="clear-modal" aria-labelledby="clear-title" aria-describedby="clear-desc">
       <div class="x-modal__head">
-        <div><h2 id="clear-title">Clear all data?</h2><p id="clear-desc">Removes broker account labels, saved bots, backtest settings and the theme choice.</p></div>
+        <div><h2 id="clear-title">Clear all data?</h2><p id="clear-desc">Removes broker account labels, saved strategies, backtest settings and the theme choice.</p></div>
       </div>
       <div class="x-modal__body">
         <p class="x-cap">Export first if you want a backup. This can't be undone.</p>
@@ -1063,7 +1063,7 @@
     <div class="x-toast" id="toast" role="status" aria-live="polite"></div>
 
     <!-- Broker logos (data URIs) -->
-    <script src="algora-logos.js?v=20261126b"></script>
+    <script src="algora-logos.js?v=20261126e"></script>
     <script>
       (function () {
         var $ = function (s, r) { return (r || document).querySelector(s); };
@@ -1340,8 +1340,8 @@
         function statusText(b) { return b.paused ? "Not running · Paused" : "Not running"; }
         function renderBots() {
           var box = $("#bot-list"), cnt = $("#bot-count");
-          cnt.hidden = !myBots.length; cnt.textContent = myBots.length + (myBots.length === 1 ? " bot" : " bots");
-          if (!myBots.length) { box.innerHTML = '<div class="x-panel x-empty"><p>No bots yet. Create your first one.</p></div>'; renderBotMini(); return; }
+          cnt.hidden = !myBots.length; cnt.textContent = myBots.length + (myBots.length === 1 ? " strategy" : " strategies");
+          if (!myBots.length) { box.innerHTML = '<div class="x-panel x-empty"><p>No strategies yet. Create your first one.</p></div>'; renderBotMini(); return; }
           var grid = el("div", "x-bcards"); box.innerHTML = ""; box.appendChild(grid);
           myBots.forEach(function (b) {
             var c = el("article", "x-bcard"), h = el("div", "x-bcard__head"), t = el("div");
@@ -1396,7 +1396,7 @@
           var name = $("#bf-name").value.trim() || strat + " · " + inst;
           myBots.push({ id: ++botSeq, name: name, strategy: strat, inst: inst, acctLabel: opt.textContent, tf: $("#bf-tf").value, buf: buf, exit: exitMode, exitv: exv, sq: bfSq.value, max: max, qty: qty, paused: false });
           saveBots(); renderBots(); $("#bf-name").value = ""; bfMsg.textContent = "";
-          toast(name + " saved as a paper bot"); logEv(name + " saved as a paper bot");
+          toast(name + " saved as a paper strategy"); logEv(name + " saved as a paper strategy");
         });
         renderBotAccts(); autoSq();
 
@@ -1610,7 +1610,7 @@
           bfSq.value = s.sqT; bfSq.dispatchEvent(new Event("input"));
           $("#bf-max").value = s.max;
           go("bots", "bot-new-h");
-          toast("Backtest settings copied to Create bot");
+          toast("Backtest settings copied to Create strategy");
         });
 
         /* 8. Saved data: restore, export, import, clear */
@@ -1704,7 +1704,7 @@
             if (Object.keys(bs).length) { applyBt(bs); saveBt(); }
             if ((d.theme === "dark" || d.theme === "light") && d.theme !== theme) setTheme(d.theme);
             saveAccounts(); saveBots(); renderAll();
-            toast(na || nb ? "Imported " + na + (na === 1 ? " account" : " accounts") + " and " + nb + (nb === 1 ? " bot" : " bots") : "Nothing new to import");
+            toast(na || nb ? "Imported " + na + (na === 1 ? " account" : " accounts") + " and " + nb + (nb === 1 ? " strategy" : " strategies") : "Nothing new to import");
           };
           rd.onerror = function () { toast("Couldn't read that file."); };
           rd.readAsText(f);
@@ -1735,13 +1735,13 @@
           accounts: function () { return accounts; },
           brokers: brokers, tile: tile, go: go, toast: toast, log: logEv, store: store,
           setPaused: function (i, v) { var b = myBots[i]; if (!b || b.paused === v) return; b.paused = v; saveBots(); renderBots(); logEv(b.name + (v ? " paused" : " resumed")); },
-          pauseAll: function (v) { var n = 0; myBots.forEach(function (b) { if (b.paused !== v) { b.paused = v; n++; } }); if (!n) return 0; saveBots(); renderBots(); logEv((v ? "Paused" : "Resumed") + " all bots (" + n + ")"); return n; }
+          pauseAll: function (v) { var n = 0; myBots.forEach(function (b) { if (b.paused !== v) { b.paused = v; n++; } }); if (!n) return 0; saveBots(); renderBots(); logEv((v ? "Paused" : "Resumed") + " all strategies (" + n + ")"); return n; }
         };
         document.dispatchEvent(new CustomEvent("algora:ready"));
         mountAll(); fromHash(); moveBar();
       })();
     </script>
-    <script src="algora-fx.js?v=20261126b"></script>
-    <script src="algora-dash.js?v=20261126d"></script>
+    <script src="algora-fx.js?v=20261126e"></script>
+    <script src="algora-dash.js?v=20261126e"></script>
   </body>
 </html>

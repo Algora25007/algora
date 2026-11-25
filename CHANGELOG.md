@@ -62,3 +62,11 @@ Researched AlgoTest, Tradetron, Quantiply, uTrade Algos, Dhan, Sensibull and Qua
 - Broker accounts with their API state and a note on daily session expiry (Kite 6:00 AM, SmartAPI midnight).
 - Motion: headline words rise from a mask, labels decode, session bars grow, numbers count up, the ring and equity curve draw in once. Reduced-motion is respected.
 - New files: algora-dash.css, algora-dash.js. New saved keys: runs, log, risk (all cleared by "Clear all data").
+
+## 26 Nov 2026 (e): Strategies, expiry-day close, honest meta
+
+- Naming: "bot" is now "strategy" across the product (tab, builder, dashboard, FAQ, toasts). The builder's template picker is labelled "Template". Hero, title and Open Graph now say "Build your own trading strategies".
+- Expiry-day close (from 7 Dec 2026, SEBI 15 Oct 2026 / NSE/FAOP/77356): index contracts expiring that day stop at 15:30, while other index and all stock F&O trade to 15:45. The dashboard header, F&O timeline lane and F&O-only state now say so on Nifty and Sensex expiry days.
+- Meta description no longer promises paper trading and broker deployment.
+- Saved-data keys and URLs (#bots) are unchanged, so existing browser data keeps working.
+- Cache-bust v=20261126e.

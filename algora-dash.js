@@ -46,7 +46,8 @@
   /* US daylight saving: 2nd Sunday of March to 1st Sunday of November. MCX closes 23:30 then, 23:55 otherwise. */
   function nthSunday(y, m, n) { var d = new Date(Date.UTC(y, m, 1)); var add = (7 - d.getUTCDay()) % 7; return Date.UTC(y, m, 1 + add + 7 * (n - 1)); }
   function usDst(d) { var y = d.getUTCFullYear(), t = d.getTime(); return t > nthSunday(y, 2, 2) && t <= nthSunday(y, 10, 1); }
-  /* F&O close moves to 15:45 from 7 Dec 2026 (SEBI circular of 15 Oct 2026); 15:40 before that. */
+  /* F&O close moves to 15:45 from 7 Dec 2026 (SEBI circular of 15 Oct 2026, NSE/FAOP/77356); 15:40 before that.
+     From 7 Dec, index contracts expiring that day stop trading at 15:30; other index and all stock F&O run to 15:45. */
   var FNO_NEW = Date.UTC(2026, 11, 7);
   function sessions(d) {
     var k = keyOf(d), wk = isWeekend(d), hol = HOL[k];
@@ -54,7 +55,7 @@
     var out = { key: k, weekend: wk, holiday: hol || null, nse: null, fno: null, mcx: null };
     if (!wk && !hol) {
       out.nse = { pre: [540, 555], open: [555, 930] };
-      out.fno = { open: [555, d.getTime() >= FNO_NEW ? 945 : 940] };
+      out.fno = { open: [555, d.getTime() >= FNO_NEW ? 945 : 940], expIdx: d.getTime() >= FNO_NEW ? expiriesFor(d).map(function (e) { return e.idx; }) : [] };
     }
     if (!wk && !MCX_FULL[k]) out.mcx = { open: [hol ? 1020 : 540, mcxClose], evening: !!hol };
     return out;
@@ -97,13 +98,13 @@
     var mcxOpen = s.mcx && m >= s.mcx.open[0] && m < s.mcx.open[1];
     if (s.nse && m >= 555 && m < 930) {
       st.tone = "on"; st.k = "NSE open"; st.h = "NSE is open. Cash closes in " + dur(930 - m) + ".";
-      st.sub = "F&O trades until " + hm(s.fno.open[1]) + ". MCX is open until " + hm(s.mcx.open[1]) + ".";
+      st.sub = "F&O trades until " + hm(s.fno.open[1]) + (s.fno.expIdx.length ? ", expiring " + s.fno.expIdx.join(" and ") + " contracts until 15:30" : "") + ". MCX is open until " + hm(s.mcx.open[1]) + ".";
     } else if (s.nse && m >= 540 && m < 555) {
       st.tone = "warn"; st.k = "Pre-open"; st.h = "Pre-open. NSE opens in " + dur(555 - m) + ".";
       st.sub = "Orders placed now match at 09:15. MCX opened at 09:00.";
     } else if (s.fno && m >= 930 && m < s.fno.open[1]) {
       st.tone = "warn"; st.k = "F&O only"; st.h = "Cash is closed. F&O trades for " + dur(s.fno.open[1] - m) + " more.";
-      st.sub = "MCX is open until " + hm(s.mcx.open[1]) + ".";
+      st.sub = (s.fno.expIdx.length ? "Today's expiring " + s.fno.expIdx.join(" and ") + " contracts stopped at 15:30. " : "") + "MCX is open until " + hm(s.mcx.open[1]) + ".";
     } else {
       var n = nextNseOpen();
       var when = n ? (keyOf(n) === keyOf(today) ? "today" : keyOf(n) === keyOf(addDays(today, 1)) ? "tomorrow" : label(n)) : "";
@@ -177,7 +178,7 @@
     }
     var rows = [
       ["NSE cash", s.nse ? [["pre", s.nse.pre, "Pre-open"], ["open", s.nse.open, "09:15–15:30"]] : null, "nse"],
-      ["NSE F&O", s.fno ? [["open", s.fno.open, "09:15–" + hm(s.fno.open[1])]] : null, "nse"],
+      ["NSE F&O", s.fno ? [["open", s.fno.open, "09:15–" + hm(s.fno.open[1]) + (s.fno.expIdx.length ? " · expiring " + s.fno.expIdx.join(", ") + " to 15:30" : "")]] : null, "nse"],
       ["MCX", s.mcx ? [["open", s.mcx.open, (s.mcx.evening ? "Evening " : "") + hm(s.mcx.open[0]) + "–" + hm(s.mcx.open[1])]] : null, "mcx"]
     ];
     var grid = el("div", "dk-tl__rows");
@@ -210,7 +211,7 @@
     box.appendChild(wrap);
     moveNow();
     var n = D.bots.length;
-    $("#dk-tl-cap").textContent = (n ? "Ticks mark each bot's square-off. " : "") + (s.fno && s.fno.open[1] === 940 ? "F&O closes 15:45 from 7 Dec 2026." : "IST");
+    $("#dk-tl-cap").textContent = (n ? "Ticks mark each strategy's square-off. " : "") + (s.fno && s.fno.open[1] === 940 ? "F&O closes 15:45 from 7 Dec 2026." : "IST");
   }
   function moveNow() {
     var n = $("#dk-tl-now"); if (!n) return;
@@ -247,13 +248,13 @@
     var box = $("#dk-bots"); box.innerHTML = "";
     if (!D.bots.length) {
       var e = el("div", "dk-empty");
-      e.appendChild(el("p", null, "No bots yet. Start from a template, backtest it on your own candles, then save it as a paper bot."));
-      var b = el("button", "dk-btn dk-btn--solid", "Build your first bot"); b.type = "button"; b.setAttribute("data-goto", "bots"); e.appendChild(b);
+      e.appendChild(el("p", null, "No strategies yet. Start from a template, backtest it on your own candles, then save it as a paper strategy."));
+      var b = el("button", "dk-btn dk-btn--solid", "Build your first strategy"); b.type = "button"; b.setAttribute("data-goto", "bots"); e.appendChild(b);
       box.appendChild(e); return;
     }
     var today = sessions(dayFromKey(keyOf(ist()))), m = nowMin();
     var wrap = el("div", "dk-tblwrap"), t = el("table", "dk-tbl dk-tbl--bots"), th = el("thead"), tr = el("tr");
-    ["Bot", "Account", "Square-off", "State", ""].forEach(function (h, i) { var c = el("th", i === 4 ? "dk-r" : null, h); c.scope = "col"; tr.appendChild(c); });
+    ["Strategy", "Account", "Square-off", "State", ""].forEach(function (h, i) { var c = el("th", i === 4 ? "dk-r" : null, h); c.scope = "col"; tr.appendChild(c); });
     th.appendChild(tr); t.appendChild(th);
     var tb = el("tbody");
     D.bots.forEach(function (b, i) {
@@ -280,7 +281,7 @@
   function renderReady(D) {
     var steps = [
       ["Add a broker account", D.accts.length > 0, "Label each account you trade", ["data-goto-anchor", "brokers"]],
-      ["Build a bot", D.bots.length > 0, "Rules, exits and square-off", ["data-goto", "bots"]],
+      ["Build a strategy", D.bots.length > 0, "Rules, exits and square-off", ["data-goto", "bots"]],
       ["Backtest on your data", D.runs.length > 0, "Your own candle CSV", ["data-goto", "backtest"]],
       ["Paper trade", null, "Next: the live-price paper engine"],
       ["Go live", null, "In development: broker API and algo tag"]
@@ -308,19 +309,19 @@
     var btn = $("#dk-kill"), all = D.bots.length && D.bots.every(function (b) { return b.paused; });
     btn.setAttribute("aria-pressed", all ? "true" : "false");
     btn.disabled = !D.bots.length;
-    $("#dk-kill-t").textContent = all ? "Resume all bots" : "Pause all bots";
-    btn.title = D.bots.length ? (all ? "Lets every bot take new entries again." : "Stops new entries on every bot at once.") : "No bots to pause yet.";
+    $("#dk-kill-t").textContent = all ? "Resume all strategies" : "Pause all strategies";
+    btn.title = D.bots.length ? (all ? "Lets every strategy take new entries again." : "Stops new entries on every strategy at once.") : "No strategies to pause yet.";
   }
 
   /* ---------- Positions / orders / engine log ---------- */
   var term = "pos";
   function renderTerm() {
     var box = $("#dk-term"); box.innerHTML = "";
-    var cols = { pos: ["Symbol", "Bot", "Qty", "Avg", "LTP", "P&L"], ord: ["Time", "Symbol", "Side", "Qty", "Price", "Status", "Fill delay"], log: ["Time", "Level", "Bot", "Message"] }[term];
+    var cols = { pos: ["Symbol", "Strategy", "Qty", "Avg", "LTP", "P&L"], ord: ["Time", "Symbol", "Side", "Qty", "Price", "Status", "Fill delay"], log: ["Time", "Level", "Strategy", "Message"] }[term];
     var msg = {
-      pos: "No open positions. When the paper engine runs your bots, positions open here with live P&L, grouped by bot.",
+      pos: "No open positions. When the paper engine runs your strategies, positions open here with live P&L, grouped by strategy.",
       ord: "No orders yet. Every order will show its status and the delay from signal to fill, so you can see slippage against your backtest.",
-      log: "The engine log is empty. Signals, fills, rejections and errors will stream here, filterable by bot and severity."
+      log: "The engine log is empty. Signals, fills, rejections and errors will stream here, filterable by strategy and severity."
     }[term];
     var wrap = el("div", "dk-tblwrap"), t = el("table", "dk-tbl dk-tbl--term"), tr = el("tr");
     cols.forEach(function (c) { var h = el("th", null, c); h.scope = "col"; tr.appendChild(h); });
@@ -418,7 +419,7 @@
   }
   function renderAct(D) {
     var box = $("#dk-act"); box.innerHTML = "";
-    if (!D.log.length) { var li = el("li", "dk-act__empty", "Nothing yet. Saving a bot, adding an account or running a backtest shows up here."); box.appendChild(li); return; }
+    if (!D.log.length) { var li = el("li", "dk-act__empty", "Nothing yet. Saving a strategy, adding an account or running a backtest shows up here."); box.appendChild(li); return; }
     D.log.slice(0, 9).forEach(function (x, i) {
       var li = el("li"); li.style.setProperty("--i", i);
       li.appendChild(el("time", null, ago(x.t))); li.appendChild(el("span", null, x.m)); box.appendChild(li);
@@ -430,7 +431,7 @@
     var box = $("#dk-acc"); box.innerHTML = "";
     $("#dk-h-broker").textContent = D.accts.length ? D.accts.length + (D.accts.length === 1 ? " label" : " labels") + " · API not connected" : "Not connected";
     if (!D.accts.length) {
-      var e = el("div", "dk-empty"); e.appendChild(el("p", null, "No accounts yet. Add a label for each account you trade, so every bot knows where it belongs."));
+      var e = el("div", "dk-empty"); e.appendChild(el("p", null, "No accounts yet. Add a label for each account you trade, so every strategy knows where it belongs."));
       var b = el("button", "dk-btn dk-btn--solid", "Add an account"); b.type = "button"; b.setAttribute("data-goto-anchor", "brokers"); e.appendChild(b);
       box.appendChild(e); return;
     }
@@ -440,7 +441,7 @@
       c.appendChild(A.tile(a.id, a.name, true));
       var t = el("div"); t.appendChild(el("b", null, a.label)); t.appendChild(el("span", null, a.name + " · " + a.api)); c.appendChild(t);
       var n = D.bots.filter(function (bt) { return bt.acctLabel === a.name + " · " + a.label; }).length;
-      var s = el("div", "dk-acc__s"); s.appendChild(el("span", "dk-state dk-state--off", "API not connected")); s.appendChild(el("small", null, n + (n === 1 ? " bot" : " bots")));
+      var s = el("div", "dk-acc__s"); s.appendChild(el("span", "dk-state dk-state--off", "API not connected")); s.appendChild(el("small", null, n + (n === 1 ? " strategy" : " strategies")));
       c.appendChild(s); grid.appendChild(c);
     });
     box.appendChild(grid);
@@ -465,7 +466,7 @@
       if (!isNaN(trades)) { if (trades < 1 || trades > 500) { msg.textContent = "Max trades must be 1 to 500."; return; } out.trades = trades; }
       if (/^([01]\d|2[0-3]):[0-5]\d$/.test(cut)) out.cut = cut;
       A.store.set("risk", out);
-      msg.textContent = "Saved. The paper engine will enforce these across every bot.";
+      msg.textContent = "Saved. The paper engine will enforce these across every strategy.";
     }, 400);
   });
   riskForm.addEventListener("submit", function (e) { e.preventDefault(); });
@@ -491,7 +492,7 @@
     var D = data(); if (!D.bots.length) return;
     var all = D.bots.every(function (b) { return b.paused; });
     var n = A.pauseAll(!all);
-    A.toast(all ? "All bots resumed" : "All bots paused" + (n ? " (" + n + ")" : ""));
+    A.toast(all ? "All strategies resumed" : "All strategies paused" + (n ? " (" + n + ")" : ""));
   });
 
   var pend;

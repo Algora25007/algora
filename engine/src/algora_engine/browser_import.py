@@ -7,17 +7,24 @@ would have accepted converts, and anything it would have dropped is reported wit
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic import ValidationError
 
 from .dsl import Instrument, StrategySpec
 from .instruments import BSE_INDEX_SYMBOLS, Exchange, Segment, is_mcx_symbol
-from .templates import first_candle_cross
+from .templates import build_template, first_candle_cross
 
 BROWSER_STRATEGIES = ("First Candle Cross", "Opening Range Breakout", "Gap fade", "Monthly option spread", "Momentum")
-SUPPORTED = {"First Candle Cross"}
+#: Browser strategy name -> engine template id.
+SUPPORTED = {
+    "First Candle Cross": "first_candle_cross",
+    "Opening Range Breakout": "opening_range_breakout",
+    "Gap fade": "gap_fade",
+    "Momentum": "momentum",
+}
+NOT_AVAILABLE_REASON = {"Monthly option spread": "it needs option-chain data the engine does not have yet"}
 BROKER_IDS = (
     "zerodha",
     "upstox",
@@ -59,6 +66,10 @@ class ConvertedBot:
     spec: StrategySpec
     paused: bool
     account_label: str | None  # "Zerodha · Main" in the browser; split into broker id + label by the caller
+    #: Template parameters the browser bot did not have, filled with defaults (name -> value).
+    defaults_used: dict[str, Any] = field(default_factory=dict)
+    #: How the browser settings were interpreted, in plain words.
+    notes: tuple[str, ...] = ()
 
 
 def clean_label(v: Any) -> str | None:
@@ -111,7 +122,7 @@ def convert_bot(raw: Any) -> ConvertedBot:
     if strategy not in BROWSER_STRATEGIES:
         raise ValueError("unknown strategy")
     if strategy not in SUPPORTED:
-        raise ValueError(f"{strategy} is not available in the engine yet")
+        raise ValueError(f"{strategy} is not available in the engine yet: {NOT_AVAILABLE_REASON[strategy]}")
     inst = raw.get("inst")
     if not isinstance(inst, str) or not _SYM.match(inst):
         raise ValueError("invalid instrument")
@@ -135,25 +146,118 @@ def convert_bot(raw: Any) -> ConvertedBot:
     acct = raw.get("acctLabel")
     instrument = instrument_for(inst)
     start = "09:00" if instrument.exchange is Exchange.MCX else "09:15"
+    exitv = float(raw["exitv"]) if exit_mode != "flip" else None
+    defaults: dict[str, Any] = {}
+    notes: list[str] = []
     try:
-        spec = first_candle_cross(
-            name=name.strip()[:80],
-            instrument=instrument,
-            timeframe=raw["tf"],
-            buffer_pct=float(raw["buf"]),
-            start=start,
-            square_off=sq,
-            target_pct=float(raw["exitv"]) if exit_mode == "target" else None,
-            stop_pct=float(raw["exitv"]) if exit_mode == "stop" else None,
-            flip=True,  # the browser always reversed on an opposite cross, whatever the exit mode
-            max_entries_per_day=int(mx),
-            quantity_lots=int(qty),
-        )
+        if strategy == "First Candle Cross":
+            spec = first_candle_cross(
+                name=name.strip()[:80],
+                instrument=instrument,
+                timeframe=raw["tf"],
+                buffer_pct=float(raw["buf"]),
+                start=start,
+                square_off=sq,
+                target_pct=exitv if exit_mode == "target" else None,
+                stop_pct=exitv if exit_mode == "stop" else None,
+                flip=True,  # the browser always reversed on an opposite cross, whatever the exit mode
+                max_entries_per_day=int(mx),
+                quantity_lots=int(qty),
+            )
+        else:
+            params, defaults, notes = _template_params(strategy, raw, exit_mode, exitv)
+            common = {
+                "timeframe": raw["tf"],
+                "start": start,
+                "square_off": sq,
+                "max_entries_per_day": int(mx),
+                "quantity_lots": int(qty),
+            }
+            spec = build_template(
+                SUPPORTED[strategy], name=name.strip()[:80], instrument=instrument, params={**common, **params}
+            )
     except (ValidationError, ValueError) as e:
         raise ValueError(f"cannot convert: {_first_error(e)}") from e
     return ConvertedBot(
-        spec=spec, paused=raw.get("paused") is True, account_label=acct[:100] if isinstance(acct, str) else None
+        spec=spec,
+        paused=raw.get("paused") is True,
+        account_label=acct[:100] if isinstance(acct, str) else None,
+        defaults_used=defaults,
+        notes=tuple(notes),
     )
+
+
+#: Defaults for settings a browser bot does not have. Reported back to the user on import.
+IMPORT_DEFAULTS: dict[str, dict[str, Any]] = {
+    "Opening Range Breakout": {"opening_range_minutes": 30, "buffer_type": "pct", "direction": "both"},
+    "Gap fade": {
+        "min_gap_pct": 0.5,
+        "max_gap_pct": 3.0,
+        "fade": "both",
+        "require_unfilled": True,
+        "entry_end": "45 min after the session start",
+    },
+    "Momentum": {"signal": "ema_cross", "fast_length": 9, "slow_length": 21, "vwap_filter": False, "direction": "both"},
+}
+
+
+def _template_params(
+    strategy: str, raw: dict, exit_mode: str, exitv: float | None
+) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
+    """Template parameters for a non-FCB browser bot: (params, defaults used, notes)."""
+    buf = float(raw["buf"])
+    notes: list[str] = []
+    defaults = dict(IMPORT_DEFAULTS[strategy])
+    if strategy == "Opening Range Breakout":
+        params: dict[str, Any] = {
+            "opening_range_minutes": 30,
+            "buffer_type": "pct",
+            "buffer": buf,
+            "direction": "both",
+            "flip": True,
+            "stop_type": "pct" if exit_mode == "stop" else "none",
+            "stop_value": exitv if exit_mode == "stop" else None,
+            "target_type": "pct" if exit_mode == "target" else "none",
+            "target_value": exitv if exit_mode == "target" else None,
+        }
+        notes.append("Entry buffer kept as a % beyond the opening range high / low.")
+        notes.append("Reverses on the opposite breakout, as the browser did; only the exit you chose is set.")
+        return params, defaults, notes
+    if strategy == "Gap fade":
+        params = {"min_gap_pct": 0.5, "max_gap_pct": 3.0, "fade": "both", "require_unfilled": True}
+        if buf:
+            notes.append("Entry buffer ignored: the gap fade has no entry buffer (minimum gap 0.5% used instead).")
+        if exit_mode == "target":
+            params |= {"target_type": "pct", "target_value": exitv}
+            defaults |= {"stop_type": "pct", "stop_value": 1.0}
+        elif exit_mode == "stop":
+            params |= {"stop_type": "pct", "stop_value": exitv}
+            defaults |= {"target_type": "prev_close"}
+        else:
+            defaults |= {"stop_type": "pct", "stop_value": 1.0, "target_type": "prev_close"}
+            notes.append("Flip has no meaning for a gap fade: default exits used (1% stop, target the previous close).")
+        return params, defaults, notes
+    # Momentum
+    params = {
+        "signal": "ema_cross",
+        "fast_length": 9,
+        "slow_length": 21,
+        "vwap_filter": False,
+        "direction": "both",
+        "flip": True,
+        "exit_on_opposite_signal": True,
+        "stop_type": "pct" if exit_mode == "stop" else "none",
+        "stop_value": exitv if exit_mode == "stop" else None,
+        "target_type": "pct" if exit_mode == "target" else "none",
+        "target_value": exitv if exit_mode == "target" else None,
+    }
+    if buf:
+        notes.append("Entry buffer ignored: the EMA crossover has no entry buffer.")
+    notes.append(
+        "Imported as intraday momentum (9/21 EMA crossover on the bot's timeframe, squared off daily); the site "
+        "described Momentum as a positional rotation, which the engine does not have."
+    )
+    return params, defaults, notes
 
 
 def bot_key(raw: dict) -> str:

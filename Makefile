@@ -14,7 +14,7 @@ help:
 	@echo "make test         engine tests, then API tests (needs Postgres at TEST_DATABASE_URL)"
 	@echo "make run          migrate and run the API locally with reload (needs infra/.env exported)"
 	@echo "make up / down    start / stop the docker-compose stack (Postgres+TimescaleDB, Redis, API)"
-	@echo "make schema       regenerate engine/schema/strategy.v1.json"
+	@echo "make schema       regenerate engine/schema/strategy.v2.json"
 
 setup:
 	$(PYTHON) -m venv $(VENV)

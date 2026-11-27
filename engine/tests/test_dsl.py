@@ -13,7 +13,7 @@ from algora_engine.dsl import (
 )
 from algora_engine.templates import first_candle_cross
 
-SCHEMA_FILE = Path(__file__).resolve().parents[1] / "schema" / "strategy.v1.json"
+SCHEMA_FILE = Path(__file__).resolve().parents[1] / "schema" / "strategy.v2.json"
 
 VALID = {
     "schema_version": 1,
@@ -88,7 +88,9 @@ def test_version_handling():
     with pytest.raises(SpecVersionError, match="required"):
         load_spec({k: v for k, v in VALID.items() if k != "schema_version"})
     with pytest.raises(SpecVersionError, match="unsupported"):
-        load_spec({**VALID, "schema_version": 2})
+        load_spec({**VALID, "schema_version": 3})
+    with pytest.raises(SpecVersionError, match="unsupported"):
+        load_spec({**VALID, "schema_version": True})
     with pytest.raises(SpecVersionError):
         load_spec([])  # type: ignore[arg-type]
 

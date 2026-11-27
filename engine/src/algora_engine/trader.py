@@ -5,18 +5,24 @@ Call :meth:`Trader.finish` after the last candle.
 
 Order of events inside one candle (all fills are decided without looking ahead):
 
+0. Every candle of an open day (including ones before the session start or after square-off) updates the
+   indicators and session state in :class:`~algora_engine.rules.RuleSignals`. A day the exchange is closed
+   (``square_off_for_day`` returns None) is skipped entirely.
 1. If the candle starts at or after the day's square-off time: cancel pending orders, close any position at the
    candle's open (market, with slippage), and ignore the rest of the day.
 2. Orders queued by the previous candle's signal fill at this candle's open, with slippage: first a flip exit,
    then the entry (subject to max entries per day and risk limits).
 3. Protective exits for the open position:
    a. Gap-through at the open: if the open is already beyond the stop, exit at the open (with slippage); if it is
-      already beyond the target, the resting limit fills at the open. Not checked on the entry candle, whose open is
-      the entry fill.
+      already beyond the target, the resting limit fills at the open. On the entry candle the check is against the
+      entry fill instead: a stop or target level that is already on the wrong side of the fill (possible with level
+      exits after a gap) closes the trade at that open, stop first.
    b. Intrabar: if the stop (fixed or trailing, whichever is tighter) was touched, exit at the stop. Only otherwise
       check the target. When both were touched in one candle, the stop is assumed to have hit first (conservative).
 4. The trailing-stop anchor (best price since entry) is updated with this candle's high/low *after* step 3.
-5. The candle's close is evaluated by the entry rules; a signal queues orders for the next candle's open.
+5. The candle's close is evaluated by the entry rules and exit conditions; a signal queues orders for the next
+   candle's open: a flip (opposite entry signal with ``exits.flip``) or a rule exit closes the position, and an
+   opposite signal then opens the new one (subject to the entry limits).
 
 At the end of a day without a square-off candle, an open position is closed at the last candle's close.
 """
@@ -107,7 +113,7 @@ class ClosedTrade:
 
 ChargesFn = Callable[[ClosedTrade], ChargesBreakdown | None]
 QtyFn = Callable[[date], int]
-SquareOffFn = Callable[[date], int]
+SquareOffFn = Callable[[date], int | None]  # None: the exchange is closed that day
 
 
 @dataclass
@@ -121,7 +127,7 @@ class _Day:
     net: float = 0.0
     halted: bool = False
     last_bar: Bar | None = None
-    pending: list[tuple[str, Side | None]] = field(default_factory=list)
+    pending: list[tuple[str, Side | None, str]] = field(default_factory=list)
 
 
 class Trader:
@@ -157,7 +163,11 @@ class Trader:
             out += self._end_day()
             self._start_day(bar.day)
             d = self._d
-        if d.skip or bar.minute < self._start:
+        if d.skip:
+            return out
+        if bar.minute < self._start or bar.minute >= d.square_off:
+            self.signals.on_bar(bar, evaluate=False)
+        if bar.minute < self._start:
             return out
         if not d.started:
             d.started = True
@@ -189,8 +199,10 @@ class Trader:
     # ----- internals --------------------------------------------------------------------------------------------
 
     def _start_day(self, day: date) -> None:
-        self._d = _Day(day=day, square_off=self._square_off_for_day(day))
-        self.signals.start_day(day)
+        sq = self._square_off_for_day(day)
+        self._d = _Day(day=day, square_off=sq if sq is not None else 0, skip=sq is None)
+        if sq is not None:
+            self.signals.start_day(day)
 
     def _end_day(self) -> list[ClosedTrade]:
         d = self._d
@@ -211,36 +223,54 @@ class Trader:
         return not (cutoff is not None and minute >= cutoff)
 
     def _queue(self, sig: Side | None, bar: Bar) -> None:
-        if sig is None:
-            return
         pos = self.position
-        if pos is not None and (pos.side is sig or not self.spec.exits.flip):
-            return
-        orders: list[tuple[str, Side | None]] = []
-        if pos is not None:
-            orders.append(("exit", None))
-        if self._entries_allowed(bar.minute):
-            orders.append(("entry", sig))
+        orders: list[tuple[str, Side | None, str]] = []
+        if pos is None:
+            if sig is not None and self._entries_allowed(bar.minute):
+                orders.append(("entry", sig, ""))
+        else:
+            reverse = sig is not None and sig is not pos.side
+            if reverse and self.spec.exits.flip:
+                orders.append(("exit", None, "Flip"))
+            elif self.signals.exit_signal(pos.side):
+                orders.append(("exit", None, "Exit rule"))
+            if orders and reverse and self._entries_allowed(bar.minute):
+                orders.append(("entry", sig, ""))
         self._d.pending = orders
 
     def _fill_pending(self, bar: Bar, out: list[ClosedTrade]) -> bool:
         d = self._d
         pending, d.pending = d.pending, []
         entered = False
-        for kind, side in pending:
+        for kind, side, reason in pending:
             if kind == "exit" and self.position is not None:
                 px = self.fills.market(bar.open, Side(-self.position.side))
-                out.append(self._close(bar.ts, px, "Flip"))
+                out.append(self._close(bar.ts, px, reason))
             elif kind == "entry" and side is not None and self.position is None and self._entries_allowed(bar.minute):
                 self._open(bar, side)
                 entered = True
         return entered
 
+    def _side_level(self, levels, side: Side) -> float | None:
+        if levels is None:
+            return None
+        op = levels.long if side is Side.LONG else levels.short
+        return self.signals.level(op) if op is not None else None
+
     def _open(self, bar: Bar, side: Side) -> None:
         ex = self.spec.exits
         price = self.fills.market(bar.open, side)
         stop = price * (1 - side * ex.stop_pct / 100) if ex.stop_pct is not None else None
+        if ex.stop_level is not None:
+            stop = self._side_level(ex.stop_level, side)
         target = price * (1 + side * ex.target_pct / 100) if ex.target_pct is not None else None
+        if ex.target_level is not None:
+            target = self._side_level(ex.target_level, side)
+        elif ex.target_r_multiple is not None and stop is not None and (price - stop) * side > 0:
+            target = price + side * ex.target_r_multiple * abs(price - stop)
+        elif ex.target_range_multiple is not None:
+            width = self.signals.range_width()
+            target = price + side * ex.target_range_multiple * width if width else None
         qty = self.spec.risk.quantity_lots * self._qty_for_day(bar.day)
         self.position = Position(side, qty, bar.ts, price, stop, target, ex.trailing_stop_pct, price)
         self._d.entries += 1
@@ -252,14 +282,14 @@ class Trader:
         stop_reason = "Trailing stop" if trailing else "Stop"
         exit_side = Side(-p.side)
         long = p.side is Side.LONG
-        if not entered_now:
-            o = bar.open
-            if stop is not None and (o <= stop if long else o >= stop):
-                out.append(self._close(bar.ts, self.fills.market(o, exit_side), stop_reason))
-                return
-            if p.target is not None and (o >= p.target if long else o <= p.target):
-                out.append(self._close(bar.ts, self.fills.limit(o), "Target"))
-                return
+        o = bar.open
+        ref = p.entry_price if entered_now else o
+        if stop is not None and (ref <= stop if long else ref >= stop):
+            out.append(self._close(bar.ts, self.fills.market(o, exit_side), stop_reason))
+            return
+        if p.target is not None and (ref >= p.target if long else ref <= p.target):
+            out.append(self._close(bar.ts, self.fills.limit(o), "Target"))
+            return
         if stop is not None and (bar.low <= stop if long else bar.high >= stop):
             out.append(self._close(bar.ts, self.fills.market(stop, exit_side), stop_reason))
             return

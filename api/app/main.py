@@ -19,7 +19,7 @@ from .config import Settings, get_settings
 from .db import get_db
 from .emailer import EmailSender, build_sender
 from .ratelimit import MemoryRateLimiter, RateLimiter, RedisRateLimiter, per_ip
-from .routers import accounts, auth, backtests, imports, risk, strategies
+from .routers import accounts, auth, backtests, imports, risk, strategies, templates
 
 log = logging.getLogger("algora.api")
 
@@ -111,7 +111,15 @@ def create_app(
     )
     app.add_middleware(SecurityHeaders)
 
-    for r in (auth.router, accounts.router, strategies.router, risk.router, backtests.router, imports.router):
+    for r in (
+        auth.router,
+        accounts.router,
+        strategies.router,
+        risk.router,
+        backtests.router,
+        imports.router,
+        templates.router,
+    ):
         app.include_router(r)
 
     @app.exception_handler(Exception)

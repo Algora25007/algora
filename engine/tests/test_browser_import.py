@@ -49,7 +49,7 @@ def test_convert_stop_and_flip_bots():
     [
         ({"name": " "}, "missing name"),
         ({"strategy": "Martingale"}, "unknown strategy"),
-        ({"strategy": "Gap fade"}, "not available"),
+        ({"strategy": "Monthly option spread"}, "not available.*option-chain"),
         ({"inst": "nifty"}, "invalid instrument"),
         ({"tf": "1h"}, "invalid timeframe"),
         ({"buf": 9}, "buffer"),
@@ -87,3 +87,48 @@ def test_instrument_mapping_and_key():
     assert instrument_for("GOLDM").segment is Segment.COMMODITY_FUTURES
     assert instrument_for("RELIANCE").segment is Segment.FUTURES
     assert bot_key(BOT) == "Nifty FCB|First Candle Cross|NIFTY|Zerodha · Main|15m|0.1|target|1.5|15:15|2|1"
+
+
+def test_convert_opening_range_breakout_bot():
+    c = convert_bot({**BOT, "strategy": "Opening Range Breakout", "tf": "5m", "buf": 0.2, "exitv": 1.0})
+    s = c.spec
+    assert s.template == "opening_range_breakout" and s.timeframe == "5m"
+    assert s.session.opening_range_minutes == 30 and s.session.square_off == "15:15"
+    assert s.entry.long[0].right.ref == "range_high" and s.entry.long[0].right.offset_pct == 0.2
+    assert s.exits.target_pct == 1.0 and s.exits.stop_pct is None and s.exits.stop_level is None and s.exits.flip
+    assert s.risk.max_entries_per_day == 2
+    assert c.defaults_used == {"opening_range_minutes": 30, "buffer_type": "pct", "direction": "both"}
+    assert any("Reverses" in n for n in c.notes)
+    s = convert_bot({**BOT, "strategy": "Opening Range Breakout", "exit": "stop", "exitv": 0.5}).spec
+    assert s.exits.stop_pct == 0.5 and s.exits.target_pct is None
+
+
+def test_convert_gap_fade_bot():
+    c = convert_bot({**BOT, "strategy": "Gap fade", "tf": "5m", "exit": "flip", "exitv": 0})
+    s = c.spec
+    assert s.template == "gap_fade" and s.session.signals_from == "session_start"
+    assert s.exits.stop_pct == 1.0 and s.exits.target_level.long.kind == "prev_session"
+    assert c.defaults_used["min_gap_pct"] == 0.5 and c.defaults_used["target_type"] == "prev_close"
+    assert any("buffer ignored" in n for n in c.notes) and any("Flip has no meaning" in n for n in c.notes)
+    c = convert_bot({**BOT, "strategy": "Gap fade", "buf": 0})
+    assert c.spec.exits.target_pct == 1.5 and c.spec.exits.stop_pct == 1.0 and c.defaults_used["stop_value"] == 1.0
+    assert not any("buffer" in n for n in c.notes)
+    c = convert_bot({**BOT, "strategy": "Gap fade", "exit": "stop", "exitv": 0.8})
+    assert c.spec.exits.stop_pct == 0.8 and c.spec.exits.target_level is not None
+
+
+def test_convert_momentum_bot():
+    c = convert_bot({**BOT, "strategy": "Momentum", "exit": "stop", "exitv": 0.7})
+    s = c.spec
+    assert s.template == "momentum" and s.timeframe == "15m"
+    assert (s.entry.long[0].left.length, s.entry.long[0].right.length) == (9, 21)
+    assert s.exits.stop_pct == 0.7 and s.exits.flip and s.exits.conditions is not None
+    assert c.defaults_used["signal"] == "ema_cross"
+    assert any("positional rotation" in n for n in c.notes) and any("buffer ignored" in n for n in c.notes)
+    mcx = convert_bot({**BOT, "strategy": "Momentum", "inst": "GOLDM", "sq": "23:00", "buf": 0}).spec
+    assert mcx.session.start == "09:00" and mcx.exits.target_pct == 1.5
+
+
+def test_template_conversion_errors_are_reported():
+    with pytest.raises(ValueError, match="cannot convert"):
+        convert_bot({**BOT, "strategy": "Opening Range Breakout", "sq": "09:30"})  # range ends after square-off

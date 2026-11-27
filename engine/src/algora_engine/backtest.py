@@ -16,7 +16,6 @@ from .candles import Bar, detect_timeframe
 from .charges import DISCOUNT_BROKER_PLAN, BrokeragePlan, ChargesBreakdown, compute_charges, rates_on
 from .dsl import StrategySpec, hhmm_to_minutes
 from .execution import SimulatedFills
-from .instruments import Segment
 from .lots import lot_size
 from .metrics import equity_curve, per_day, summarize
 from .rules import Side
@@ -151,16 +150,15 @@ def run_backtest(spec: StrategySpec, bars: Sequence[Bar], config: BacktestConfig
         warnings.append(f"Combined {src_tf}m candles into {spec.timeframe} candles from {spec.session.start}.")
 
     days = sorted({b.day for b in bars})
-    commodity = inst.segment in (Segment.COMMODITY_FUTURES, Segment.COMMODITY_OPTIONS)
-    closed_days = [
-        d
-        for d in days
-        if cal.is_known_year(d.year) and (cal.sessions(d).mcx is None if commodity else not cal.is_nse_trading_day(d))
-    ]
+    closed_days = [d for d in days if cal.market_close(d, inst.segment, inst.symbol) is None]
     if closed_days:
+        skipped = " No trades were taken on them." if config.use_exchange_calendar else ""
         warnings.append(
             f"{len(closed_days)} session(s) fall on exchange holidays or weekends, e.g. {closed_days[0].isoformat()}."
+            + skipped
         )
+    if spec.uses_vwap() and any(b.volume is None for b in bars):
+        raise BacktestError("the strategy uses VWAP, which needs a volume column on every candle")
     unknown_years = sorted({d.year for d in days if not cal.is_known_year(d.year)})
     if unknown_years and config.use_exchange_calendar:
         warnings.append(
@@ -180,14 +178,15 @@ def run_backtest(spec: StrategySpec, bars: Sequence[Bar], config: BacktestConfig
             if not info.verified:
                 warnings.append(f"Lot size {info.size} for {inst.symbol} is not verified ({info.source}).")
 
-    def square_off(d: date) -> int:
+    def square_off(d: date) -> int | None:
+        """Square-off minute for ``d``: capped at the exchange close; None when the exchange is closed."""
         sq = spec.session.square_off_minute
         if not config.use_exchange_calendar:
             return sq
         close = cal.market_close(d, inst.segment, inst.symbol)
-        return min(sq, close) if close is not None else sq
+        return min(sq, close) if close is not None else None
 
-    capped = [d for d in days if square_off(d) < spec.session.square_off_minute]
+    capped = [d for d in days if (x := square_off(d)) is not None and x < spec.session.square_off_minute]
     if capped:
         warnings.append(
             f"Square-off moved earlier on {len(capped)} day(s) to the exchange close "
@@ -229,6 +228,25 @@ def run_backtest(spec: StrategySpec, bars: Sequence[Bar], config: BacktestConfig
     for b in bars:
         trades.extend(trader.on_bar(b))
     trades.extend(trader.finish())
+    status = trader.signals.prev_session_status
+    if status:
+        missing = sorted(d for d, v in status.items() if v == "missing")
+        unverified = sorted(d for d, v in status.items() if v == "unverified")
+        if any(v == "none" for v in status.values()):
+            warnings.append(
+                f"The first session in the data ({min(status).isoformat()}) has no previous session, so "
+                "previous-session values (e.g. the gap) are unavailable that day."
+            )
+        if missing:
+            warnings.append(
+                f"The previous trading session is missing from the data before {len(missing)} day(s), e.g. "
+                f"{missing[0].isoformat()}; previous-session values were unavailable on those days."
+            )
+        if unverified:
+            warnings.append(
+                f"Previous-session values on {len(unverified)} day(s) (e.g. {unverified[0].isoformat()}) use the "
+                "latest earlier day in the data, which could not be checked against a holiday list."
+            )
 
     return BacktestResult(
         trades=trades,
@@ -252,6 +270,8 @@ def run_backtest(spec: StrategySpec, bars: Sequence[Bar], config: BacktestConfig
                 "slippage_pct": config.slippage_pct,
                 "slippage_points": config.slippage_points,
                 "same_candle_stop_and_target": "stop first",
+                "gap_through_stop_or_target": "fills at the candle open",
+                "exchange_closed_days": "skipped" if config.use_exchange_calendar else "traded",
             },
         },
     )

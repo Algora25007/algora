@@ -99,6 +99,32 @@ def next_trading_day(d: date) -> date:
     raise ValueError(f"no trading day within 15 days after {d}")  # pragma: no cover
 
 
+def is_session_day(d: date, segment: Segment) -> bool:
+    """Whether the exchange that ``segment`` trades on is open on ``d`` (MCX: any weekday that is not a full MCX
+    holiday, including evening-only days; NSE/BSE: NSE trading days). Unknown years count weekdays as open."""
+    if segment in (Segment.COMMODITY_FUTURES, Segment.COMMODITY_OPTIONS):
+        return not is_weekend(d) and d not in load_holidays().mcx_full
+    return is_nse_trading_day(d)
+
+
+def previous_session_check(prev: date, today: date, segment: Segment) -> str:
+    """Is ``prev`` (the latest earlier day in the candle data) the previous trading session before ``today``?
+
+    Returns ``"ok"``; ``"missing"`` when a known trading day lies between them (data has a hole); or
+    ``"unverified"`` when only days of a year without a holiday list lie between them and one of those is a
+    weekday (it may have been a holiday, or the data may be missing it).
+    """
+    x = prev + timedelta(days=1)
+    unverified = False
+    while x < today:
+        if is_session_day(x, segment):
+            if is_known_year(x.year):
+                return "missing"
+            unverified = True
+        x += timedelta(days=1)
+    return "unverified" if unverified else "ok"
+
+
 def _nth_sunday(year: int, month: int, n: int) -> date:
     first = date(year, month, 1)
     add = (6 - first.weekday()) % 7  # weekday(): Monday=0 .. Sunday=6

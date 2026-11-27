@@ -44,7 +44,7 @@ def test_backtest_inline_spec_matches_hand_computed(user, client):
     assert run["summary"]["net_pnl"] == pytest.approx(121.27)
     assert run["candles_meta"]["rows"] == 6 and run["candles_meta"]["timeframe_minutes"] == 15
     assert run["candles_meta"]["file_name"] == "nifty.csv" and len(run["candles_meta"]["sha256"]) == 64
-    assert run["strategy_id"] is None and run["engine_version"] == "0.1.0"
+    assert run["strategy_id"] is None and run["engine_version"] == "0.2.0"
     assert run["equity_curve"][-1]["equity"] == pytest.approx(121.27)
     assert "backtest.create" in audit_actions(user.email)
 
@@ -206,9 +206,15 @@ def test_import_browser_export(user, client):
     assert r.status_code == 200, r.text
     res = r.json()
     # Main, Swing, Wife from the account list, plus "Upstox · New" referenced by a bot
-    assert res["accounts_created"] == 4 and res["strategies_created"] == 2
+    assert res["accounts_created"] == 4 and res["strategies_created"] == 3
     reasons = {s["name"]: s["reason"] for s in res["strategies_skipped"]}
-    assert "not available" in reasons["ORB"] and "buffer" in reasons["Broken"] and reasons[""] == "not an object"
+    assert "buffer" in reasons["Broken"] and reasons[""] == "not an object" and "ORB" not in reasons
+    details = {d["name"]: d for d in res["strategies_created_details"]}
+    assert details["ORB"]["template"] == "opening_range_breakout" and details["ORB"]["browser_strategy"] == (
+        "Opening Range Breakout"
+    )
+    assert details["ORB"]["defaults_used"] == {"opening_range_minutes": 30, "buffer_type": "pct", "direction": "both"}
+    assert details["Nifty FCB"]["defaults_used"] == {} and details["Nifty FCB"]["template"] == "first_candle_cross"
     assert res["risk_imported"] and res["backtest_settings_imported"]
 
     strategies = client.get("/strategies", headers=h).json()["items"]
@@ -226,7 +232,7 @@ def test_import_browser_export(user, client):
     # Re-importing the same file creates nothing new.
     again = client.post("/import", json=EXPORT, headers=h).json()
     assert again["accounts_created"] == 0 and again["strategies_created"] == 0
-    assert {s["reason"] for s in again["strategies_skipped"] if s["name"] in ("Nifty FCB", "Crude FCB")} == {
+    assert {s["reason"] for s in again["strategies_skipped"] if s["name"] in ("Nifty FCB", "Crude FCB", "ORB")} == {
         "already imported"
     }
     assert again["risk_imported"] is False  # limits already on the server are never overwritten

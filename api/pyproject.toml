@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "algora-api"
-version = "0.1.0"
+version = "0.2.0"
 description = "Algora API: auth (email OTP + TOTP), strategies, broker accounts, risk limits, backtests, import"
 requires-python = ">=3.12"
 dependencies = [
-  "algora-engine==0.1.0",
+  "algora-engine==0.2.0",
   "fastapi>=0.115,<1",
   "uvicorn[standard]>=0.30",
   "sqlalchemy>=2.0.30,<3",

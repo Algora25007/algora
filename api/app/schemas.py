@@ -207,10 +207,38 @@ class Page(BaseModel, Generic[T]):  # noqa: UP046 - explicit TypeVar keeps pydan
 # ----- import ---------------------------------------------------------------------------------------------------
 
 
+class ImportedStrategy(BaseModel):
+    """How one browser bot was mapped to an engine template."""
+
+    id: uuid.UUID
+    name: str
+    browser_strategy: str
+    template: str
+    defaults_used: dict[str, Any] = Field(description="Template settings the bot did not have, filled with defaults")
+    notes: list[str] = Field(description="How the browser settings were interpreted")
+
+
 class ImportResult(BaseModel):
     accounts_created: int
     accounts_existing: int
     strategies_created: int
+    strategies_created_details: list[ImportedStrategy] = Field(default_factory=list)
     strategies_skipped: list[dict[str, str]]
     risk_imported: bool
     backtest_settings_imported: bool
+
+
+# ----- templates ------------------------------------------------------------------------------------------------
+
+
+class TemplateSpecIn(_In):
+    name: Annotated[str, Field(min_length=1, max_length=80)]
+    instrument: dict[str, Any] = Field(description="DSL instrument: symbol, exchange, segment[, lot_size, tick_size]")
+    params: dict[str, Any] = Field(default_factory=dict, description="Template parameters; omitted ones use defaults")
+
+
+class TemplateSpecOut(BaseModel):
+    template: str
+    spec: dict[str, Any]
+    params_used: dict[str, Any] = Field(description="Every parameter after defaults were applied")
+    defaults_used: list[str] = Field(description="Parameters that were not sent and took their default")

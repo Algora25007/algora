@@ -6,7 +6,7 @@ import json
 import re
 from typing import Any
 
-from algora_engine.browser_import import bot_key, clean_accounts, convert_bot, split_account_label
+from algora_engine.browser_import import SUPPORTED, bot_key, clean_accounts, convert_bot, split_account_label
 from algora_engine.dsl import load_spec
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -16,7 +16,7 @@ from .. import audit
 from ..db import get_db
 from ..deps import user_limit
 from ..models import BrokerAccount, RiskLimits, Strategy, User
-from ..schemas import ImportResult, RiskIn
+from ..schemas import ImportedStrategy, ImportResult, RiskIn
 from .accounts import MAX_ACCOUNTS
 from .accounts import snapshot as account_snapshot
 from .risk import upsert as upsert_risk
@@ -40,8 +40,8 @@ def clean_backtest_settings(s: Any) -> dict[str, str]:
     out: dict[str, str] = {}
     if not isinstance(s, dict):
         return out
-    if s.get("strategy") == "First Candle Cross":
-        out["strategy"] = "First Candle Cross"
+    if s.get("strategy") in SUPPORTED:
+        out["strategy"] = s["strategy"]
     for k in ("start", "sq"):
         if isinstance(s.get(k), str) and _TIME.match(s[k]):
             out[k] = s[k]
@@ -124,6 +124,7 @@ def import_browser_export(
             continue
     n_strats = strategy_count(db, user)
     created_strats = 0
+    details: list[ImportedStrategy] = []
     skipped: list[dict[str, str]] = []
     seen_keys: set[str] = set()
     bots = data.get("bots")
@@ -159,6 +160,16 @@ def import_browser_export(
             after={**strategy_snapshot(s), "spec": doc, "source": "browser_import"},
         )
         current.add((conv.spec.name, _canon(doc)))
+        details.append(
+            ImportedStrategy(
+                id=s.id,
+                name=conv.spec.name,
+                browser_strategy=str(raw["strategy"]),
+                template=conv.spec.template,
+                defaults_used=conv.defaults_used,
+                notes=list(conv.notes),
+            )
+        )
         n_strats += 1
         created_strats += 1
 
@@ -185,6 +196,7 @@ def import_browser_export(
         accounts_created=created_accounts,
         accounts_existing=existing_accounts,
         strategies_created=created_strats,
+        strategies_created_details=details,
         strategies_skipped=skipped,
         risk_imported=risk_imported,
         backtest_settings_imported=bool(bt),
@@ -196,7 +208,7 @@ def import_browser_export(
         user_id=user.id,
         entity_type="user",
         entity_id=user.id,
-        after=result.model_dump(),
+        after=result.model_dump(mode="json"),
     )
     db.commit()
     return result

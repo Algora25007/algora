@@ -1,3 +1,30 @@
+# Backend (engine + API)
+
+## 0.2.0, 28 Nov 2026: Phase 2 templates (branch phase-2-templates)
+
+- New templates on the DSL: Opening Range Breakout, Gap fade and intraday Momentum (EMA crossover or N-candle
+  breakout, optional VWAP filter), alongside First Candle Cross. Monthly option spread stays "not available yet"
+  (needs option-chain data).
+- Strategy schema v2 (`engine/schema/strategy.v2.json`): opening-range, previous-session and indicator operands
+  (EMA, SMA, highest/lowest, VWAP), point offsets, `time_between` conditions, level stops/targets, R-multiple and
+  range-multiple targets, rule-based exit conditions, `signals_from`. v1 documents upgrade automatically and
+  behave identically; Alembic migration 0002 upgrades stored strategy versions.
+- `GET /templates` (catalogue with parameter schema and defaults) and `POST /templates/{id}/spec`.
+- `POST /import` now converts Opening Range Breakout, Gap fade and Momentum bots and reports the defaults used
+  (`strategies_created_details`).
+- Behaviour change: backtests skip days the exchange is closed (weekends and listed holidays) instead of trading
+  them with a warning. `use_exchange_calendar: false` restores the old behaviour.
+- A stop or target level already on the wrong side of the entry fill now closes the trade at that open (stop first).
+- Backtests that use VWAP need a volume column on every candle.
+- Engine and API version 0.2.0.
+
+## 0.1.0, 26 Nov 2026: Phase 1 foundation (branch phase-1-foundation)
+
+- Engine (DSL v1, First Candle Cross, event-driven Trader, fills, charges, lots, calendar, metrics), API (OTP +
+  TOTP, strategies, backtests, import), infra and CI.
+
+# Front end
+
 # Home page review, 26 Nov 2026
 
 ## Truth and compliance (fintech pages are judged on this first)
